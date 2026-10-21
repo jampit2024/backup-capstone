@@ -23,6 +23,8 @@ RUN apt-get update \
         libonig-dev \
         libxml2-dev \
         libzip-dev \
+        passwd \
+        util-linux \
     && docker-php-ext-install -j"$(nproc)" \
         curl \
         intl \
@@ -31,6 +33,12 @@ RUN apt-get update \
         pdo_mysql \
         xml \
         zip \
+    && if getent group 1000 >/dev/null; then \
+        usermod -a -G 1000 www-data; \
+    else \
+        groupadd --gid 1000 render-secrets \
+        && usermod -a -G render-secrets www-data; \
+    fi \
     && a2enmod headers rewrite \
     && sed -i 's/^Listen 80$/Listen 10000/' /etc/apache2/ports.conf \
     && rm -rf /var/lib/apt/lists/*
