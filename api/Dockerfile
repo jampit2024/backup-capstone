@@ -8,6 +8,7 @@ RUN composer install \
     --no-dev \
     --no-interaction \
     --no-progress \
+    --no-scripts \
     --prefer-dist \
     --optimize-autoloader
 
@@ -39,10 +40,13 @@ WORKDIR /var/www/html
 COPY --chown=www-data:www-data . .
 COPY --from=vendor --chown=www-data:www-data /app/vendor ./vendor
 COPY apache.conf /etc/apache2/sites-available/000-default.conf
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint
 
 RUN mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
-    && chown -R www-data:www-data storage bootstrap/cache
+    && chown -R www-data:www-data storage bootstrap/cache \
+    && chmod +x /usr/local/bin/docker-entrypoint
 
 EXPOSE 10000
 
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint"]
 CMD ["apache2-foreground"]
