@@ -1,0 +1,10 @@
+-- No destructive database migration was approved by the 2026-09-29 audit.
+-- Therefore this file intentionally contains restore guidance only.
+-- Restore the tested full backup after replacing placeholders:
+--
+-- mysql --binary-mode=1 -h <host> -P <port> -u <user> -p <database> \
+--   < masterexam_pre_cleanup_YYYYMMDD_HHMMSS.sql
+--
+-- Do not execute a table-specific rollback until the approved cleanup
+-- migration includes its exact CREATE TABLE, indexes, foreign keys, and data
+-- restoration procedure.

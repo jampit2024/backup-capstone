@@ -1,0 +1,224 @@
+erDiagram
+    direction LR
+
+    roles {
+        BIGINT id PK
+        VARCHAR name
+        VARCHAR slug UK
+    }
+    users {
+        BIGINT id PK
+        BIGINT role_id FK
+        VARCHAR email UK
+        VARCHAR google_id UK
+        VARCHAR status
+    }
+    applicants {
+        BIGINT id PK
+        VARCHAR applicant_code UK
+        VARCHAR reference_number UK
+        VARCHAR name
+        VARCHAR email
+        VARCHAR gmail
+        VARCHAR course_applied
+    }
+    exam_schedules {
+        BIGINT id PK
+        BIGINT proctor_id FK
+        DATE exam_date
+        VARCHAR batch_code
+        VARCHAR status
+    }
+    exam_rooms {
+        BIGINT id PK
+        BIGINT examination_schedule_id FK
+        BIGINT proctor_id FK
+        VARCHAR room_name
+        INT capacity
+    }
+    exam_registrations {
+        BIGINT id PK
+        BIGINT examination_schedule_id FK
+        BIGINT applicant_id FK
+        BIGINT previous_schedule_id FK
+        BIGINT exam_session_id FK
+        BIGINT result_email_batch_id FK
+        BIGINT rescheduled_by FK
+        DECIMAL score
+        VARCHAR attendance_status
+        VARCHAR result_status
+    }
+    exam_sessions {
+        BIGINT id PK
+        BIGINT examination_schedule_id FK
+        BIGINT examination_room_id FK
+        BIGINT question_bank_id FK
+        BIGINT proctor_id FK
+        VARCHAR session_code
+        UUID qr_token
+        VARCHAR status
+    }
+    exam_session_join_records {
+        BIGINT id PK
+        BIGINT exam_session_id FK
+        VARCHAR student_id
+        VARCHAR device_id
+        TIMESTAMP joined_at
+    }
+    exam_packs {
+        BIGINT id PK
+        VARCHAR school_year UK
+        VARCHAR title
+        BOOLEAN is_active
+    }
+    exam_subjects {
+        BIGINT id PK
+        BIGINT question_bank_id FK
+        VARCHAR code
+        VARCHAR name
+        INT selection_limit
+    }
+    exam_questions {
+        BIGINT id PK
+        BIGINT exam_subject_id FK
+        BIGINT created_by FK
+        TEXT stem
+        VARCHAR question_type
+        VARCHAR difficulty
+    }
+    exam_question_choices {
+        BIGINT id PK
+        BIGINT exam_question_id FK
+        VARCHAR choice_key
+        TEXT choice_text
+        SMALLINT sort_order
+        BOOLEAN is_correct
+    }
+    exam_answers {
+        BIGINT id PK
+        BIGINT examination_registration_id FK
+        BIGINT exam_question_id FK
+        VARCHAR selected_answer
+        BOOLEAN is_correct
+    }
+    exam_passkey_delivery_logs {
+        BIGINT id PK
+        BIGINT examination_registration_id FK
+        BIGINT sent_by FK
+        VARCHAR status
+        VARCHAR email
+    }
+    result_email_batches {
+        BIGINT id PK
+        BIGINT requested_by FK
+        INT total
+        INT queued
+        INT sent
+        INT failed
+        VARCHAR status
+    }
+    course_grading_settings {
+        BIGINT id PK
+        VARCHAR course_code UK
+        VARCHAR course_name
+        DECIMAL passing_percentage
+        DECIMAL failing_grade_point
+    }
+    exam_settings {
+        BIGINT id PK
+        INT duration_minutes
+        BOOLEAN allow_late_entry
+        SMALLINT room_student_limit
+        SMALLINT disconnect_grace_seconds
+    }
+    activity_logs {
+        BIGINT id PK
+        BIGINT user_id FK
+        VARCHAR subject_type
+        BIGINT subject_id
+        VARCHAR action
+    }
+    test_items {
+        BIGINT id PK
+        BIGINT user_id FK
+        VARCHAR title
+        VARCHAR status
+    }
+    password_reset_tokens {
+        VARCHAR email PK
+        VARCHAR token
+    }
+    sessions {
+        VARCHAR id PK
+        BIGINT user_id
+        INT last_activity
+    }
+    cache {
+        VARCHAR key PK
+        MEDIUMTEXT value
+        BIGINT expiration
+    }
+    cache_locks {
+        VARCHAR key PK
+        VARCHAR owner
+        BIGINT expiration
+    }
+    jobs {
+        BIGINT id PK
+        VARCHAR queue
+        LONGTEXT payload
+    }
+    job_batches {
+        VARCHAR id PK
+        VARCHAR name
+        INT total_jobs
+    }
+    failed_jobs {
+        BIGINT id PK
+        VARCHAR uuid UK
+        LONGTEXT payload
+    }
+    personal_access_tokens {
+        BIGINT id PK
+        VARCHAR tokenable_type
+        BIGINT tokenable_id
+        VARCHAR token UK
+    }
+    migrations {
+        INT id PK
+        VARCHAR migration
+        INT batch
+    }
+
+    roles ||--o{ users : assigns
+    users ||--o{ exam_schedules : proctors
+    users ||--o{ exam_rooms : proctors
+    users ||--o{ exam_questions : creates
+    users ||--o{ result_email_batches : requests
+    users ||--o{ exam_passkey_delivery_logs : sends
+    users ||--o{ exam_registrations : reschedules
+    users ||--o{ activity_logs : performs
+    users ||--o{ test_items : owns
+
+    exam_schedules ||--o{ exam_rooms : contains
+    exam_schedules ||--o{ exam_registrations : schedules
+    exam_schedules o|--o{ exam_registrations : previous_schedule
+    exam_schedules o|--o{ exam_sessions : optional_schedule
+    exam_rooms o|--o{ exam_sessions : hosts
+    exam_packs o|--o{ exam_sessions : uses
+    users ||--o{ exam_sessions : proctors
+    exam_sessions o|--o{ exam_registrations : hosts
+    exam_sessions ||--o{ exam_session_join_records : records_joins
+
+    applicants ||--o{ exam_registrations : registers
+    exam_packs ||--o{ exam_subjects : groups
+    exam_subjects ||--o{ exam_questions : contains
+    exam_questions ||--o{ exam_question_choices : offers
+    exam_registrations ||--o{ exam_answers : records
+    exam_questions ||--o{ exam_answers : answers
+    result_email_batches o|--o{ exam_registrations : delivers
+    exam_registrations ||--o{ exam_passkey_delivery_logs : tracks
+
+    %% exam_session_join_records.student_id is a string identifier, not an applicants FK.
+    %% activity_logs.subject_type/subject_id is polymorphic and has no conventional FK.
+    %% sessions.user_id and personal_access_tokens ownership are framework-managed without FKs.
